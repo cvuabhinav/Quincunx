@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quincunx (Galton Board) Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1400px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .canvas-container {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            color: #2d3748;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+        }
+
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(113, 128, 150, 0.4);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-label {
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4299e1;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #3182ce;
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4299e1;
+            cursor: pointer;
+            border: none;
+        }
+
+        .stats-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .stat-section {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #4299e1;
+        }
+
+        .stat-section h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            color: #4a5568;
+            font-size: 0.9em;
+        }
+
+        .stat-row span:last-child {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .info-box h4 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .info-box p {
+            font-size: 0.9em;
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Quincunx (Galton Board) Simulator</h1>
+            <p class="subtitle">Watch balls drop through pegs and form a normal distribution!</p>
+        </header>
+
+        <div class="main-grid">
+            <div class="canvas-container">
+                <canvas id="canvas" width="700" height="700"></canvas>
+            </div>
+
+            <div class="sidebar">
+                <!-- Controls Card -->
+                <div class="card">
+                    <h3>⚙️ Controls</h3>
+                    <div class="controls">
+                        <div class="button-group">
+                            <button id="playBtn" class="btn-primary">
+                                <span id="playIcon">▶</span>
+                                <span id="playText">Start</span>
+                            </button>
+                            <button id="resetBtn" class="btn-secondary">
+                                ↻ Reset
+                            </button>
+                        </div>
+
+                        <div class="slider-group">
+                            <label class="slider-label">Rows: <span id="rowsValue">12</span></label>
+                            <input type="range" id="rowsSlider" min="5" max="15" value="12">
+                        </div>
+
+                        <div class="slider-group">
+                            <label class="slider-label">Speed: <span id="speedValue">5</span></label>
+                            <input type="range" id="speedSlider" min="1" max="10" value="5">
+                        </div>
+
+                        <div class="slider-group">
+                            <label class="slider-label">Max Balls: <span id="maxBallsValue">50</span></label>
+                            <input type="range" id="maxBallsSlider" min="20" max="100" step="10" value="50">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Card -->
+                <div class="card">
+                    <h3>📊 Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Balls Dropped</div>
+                            <div class="stat-value" id="ballsDropped">0</div>
+                        </div>
+
+                        <div class="stat-section">
+                            <h4>Observed Distribution</h4>
+                            <div class="stat-row">
+                                <span>Mean:</span>
+                                <span id="obsMean">0.0000</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Variance:</span>
+                                <span id="obsVar">0.0000</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Std Dev:</span>
+                                <span id="obsStd">0.0000</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-section">
+                            <h4>Theoretical (Binomial)</h4>
+                            <div class="stat-row">
+                                <span>Mean:</span>
+                                <span id="theoMean">6.0000</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Variance:</span>
+                                <span id="theoVar">3.0000</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Std Dev:</span>
+                                <span id="theoStd">1.7321</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="info-box">
+                    <h4>💡 How It Works</h4>
+                    <p>Each ball makes a random 50/50 choice (left or right) at every peg. The final distribution approximates a binomial distribution, demonstrating the Central Limit Theorem!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        let rows = 12;
+        let isRunning = false;
+        let speed = 5;
+        let maxBalls = 50;
+
+        // Simulation state
+        let balls = [];
+        let bins = [];
+        let droppedCount = 0;
+        let frameCount = 0;
+        let animationId = null;
+
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const pegRadius = 4;
+        const ballRadius = 5;
+        const pegSpacingX = 40;
+        const pegSpacingY = 35;
+        const offsetX = 50;
+        const offsetY = 50;
+
+        // Initialize
+        function init() {
+            bins = new Array(rows + 1).fill(0);
+            updateTheoretical();
+        }
+
+        // Ball class
+        class Ball {
+            constructor() {
+                this.id = Date.now() + Math.random();
+                this.x = offsetX + (rows * pegSpacingX) / 2;
+                this.y = offsetY - 20;
+                this.row = 0;
+                this.col = 0;
+                this.vx = 0;
+                this.vy = 2;
+                this.path = [];
+                this.alpha = 1;
+
+                // Pre-calculate path
+                for (let r = 0; r < rows; r++) {
+                    this.path.push(Math.random() < 0.5 ? -1 : 1);
+                }
+
+                this.finalBin = this.path.filter(p => p === 1).length;
+            }
+
+            update() {
+                this.y += this.vy;
+                this.x += this.vx;
+
+                // Check if reached next row
+                const targetY = offsetY + this.row * pegSpacingY;
+                if (this.y >= targetY && this.row < rows) {
+                    const direction = this.path[this.row];
+                    this.col += direction;
+                    this.row++;
+
+                    this.vx = direction * 2;
+
+                    if (this.row === rows) {
+                        this.vy = 3;
+                        bins[this.finalBin]++;
+                        updateStats();
+                    }
+                }
+
+                this.vx *= 0.9;
+
+                // Fade out at bottom
+                if (this.row >= rows) {
+                    this.alpha -= 0.02;
+                }
+
+                return this.alpha > 0;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.alpha;
+
+                const gradient = ctx.createRadialGradient(
+                    this.x - 2, this.y - 2, 0,
+                    this.x, this.y, ballRadius
+                );
+                gradient.addColorStop(0, '#ff6b6b');
+                gradient.addColorStop(1, '#c92a2a');
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, ballRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#742a2a';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // Draw pegs
+        function drawPegs() {
+            ctx.fillStyle = '#4a5568';
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c <= r; c++) {
+                    const x = offsetX + (rows * pegSpacingX) / 2 - (r * pegSpacingX) / 2 + c * pegSpacingX;
+                    const y = offsetY + r * pegSpacingY;
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, pegRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Draw histogram
+        function drawHistogram() {
+            const binY = offsetY + rows * pegSpacingY + 50;
+            const maxBinCount = Math.max(...bins, 1);
+            const binHeight = 150;
+
+            bins.forEach((count, i) => {
+                const x = offsetX + (rows * pegSpacingX) / 2 - (rows * pegSpacingX) / 2 + i * pegSpacingX - 15;
+                const height = (count / maxBinCount) * binHeight;
+
+                // Draw bar
+                ctx.fillStyle = '#4299e1';
+                ctx.fillRect(x, binY - height, 30, height);
+
+                ctx.strokeStyle = '#2b6cb0';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, binY - height, 30, height);
+
+                // Draw count
+                if (count > 0) {
+                    ctx.fillStyle = '#2d3748';
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(count, x + 15, binY - height - 8);
+                }
+            });
+        }
+
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawPegs();
+            drawHistogram();
+
+            // Update and draw balls
+            balls = balls.filter(ball => ball.update());
+            balls.forEach(ball => ball.draw());
+
+            // Drop new balls
+            frameCount++;
+            if (frameCount % (11 - speed) === 0 && balls.length < maxBalls) {
+                balls.push(new Ball());
+                droppedCount++;
+                document.getElementById('ballsDropped').textContent = droppedCount;
+            }
+
+            if (isRunning) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        // Update statistics display
+        function updateStats() {
+            const total = bins.reduce((sum, count) => sum + count, 0);
+            if (total === 0) return;
+
+            const mean = bins.reduce((sum, count, i) => sum + count * i, 0) / total;
+            const variance = bins.reduce((sum, count, i) => sum + count * Math.pow(i - mean, 2), 0) / total;
+            const std = Math.sqrt(variance);
+
+            document.getElementById('obsMean').textContent = mean.toFixed(4);
+            document.getElementById('obsVar').textContent = variance.toFixed(4);
+            document.getElementById('obsStd').textContent = std.toFixed(4);
+        }
+
+        // Update theoretical values
+        function updateTheoretical() {
+            const mean = rows / 2;
+            const variance = rows / 4;
+            const std = Math.sqrt(variance);
+
+            document.getElementById('theoMean').textContent = mean.toFixed(4);
+            document.getElementById('theoVar').textContent = variance.toFixed(4);
+            document.getElementById('theoStd').textContent = std.toFixed(4);
+        }
+
+        // Event listeners
+        document.getElementById('playBtn').addEventListener('click', () => {
+            isRunning = !isRunning;
+            const playIcon = document.getElementById('playIcon');
+            const playText = document.getElementById('playText');
+
+            if (isRunning) {
+                playIcon.textContent = '⏸';
+                playText.textContent = 'Pause';
+                animate();
+            } else {
+                playIcon.textContent = '▶';
+                playText.textContent = 'Start';
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            isRunning = false;
+            document.getElementById('playIcon').textContent = '▶';
+            document.getElementById('playText').textContent = 'Start';
+            balls = [];
+            bins = new Array(rows + 1).fill(0);
+            droppedCount = 0;
+            frameCount = 0;
+            document.getElementById('ballsDropped').textContent = '0';
+            document.getElementById('obsMean').textContent = '0.0000';
+            document.getElementById('obsVar').textContent = '0.0000';
+            document.getElementById('obsStd').textContent = '0.0000';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPegs();
+            drawHistogram();
+        });
+
+        document.getElementById('rowsSlider').addEventListener('input', (e) => {
+            rows = parseInt(e.target.value);
+            document.getElementById('rowsValue').textContent = rows;
+            document.getElementById('resetBtn').click();
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            speed = parseInt(e.target.value);
+            document.getElementById('speedValue').textContent = speed;
+        });
+
+        document.getElementById('maxBallsSlider').addEventListener('input', (e) => {
+            maxBalls = parseInt(e.target.value);
+            document.getElementById('maxBallsValue').textContent = maxBalls;
+        });
+
+        // Initialize
+        init();
+        drawPegs();
+        drawHistogram();
+    </script>
+</body>
+</html>
